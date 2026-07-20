@@ -1,0 +1,57 @@
+name: Build iOS IPA (unsigned)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Generate native iOS project (expo prebuild)
+        run: npx expo prebuild --platform ios --clean --no-install
+
+      - name: Install CocoaPods
+        working-directory: ios
+        run: pod install --repo-update
+
+      - name: Build unsigned .app (Release / iphoneos)
+        run: |
+          set -e
+          SCHEME=$(ls ios | grep '\.xcodeproj$' | head -1 | sed 's/\.xcodeproj$//')
+          echo "Scheme: $SCHEME"
+          xcodebuild \
+            -workspace "ios/${SCHEME}.xcworkspace" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package unsigned IPA
+        run: |
+          set -e
+          APP_PATH=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          echo "App: $APP_PATH"
+          rm -rf Payload unsigned-ipa
+          mkdir -p Payload unsigned-ipa
+          cp -R "$APP_PATH" Payload/
+          zip -qr "unsigned-ipa/app-unsigned.ipa" Payload
+          ls -lh unsigned-ipa/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-ipa
+          path: unsigned-ipa/app-unsigned.ipa
+          retention-days: 14

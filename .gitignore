@@ -41,3 +41,9 @@ example
 # generated native folders
 /ios
 /android
+
+# 敏感数据（后端源码 + 真实账号 Token，切勿上传）
+账号api管理/
+
+# 旧版 UI 归档与本机构建产物
+_archive-old-ui/
