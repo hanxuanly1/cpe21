@@ -8,7 +8,6 @@
                  "scheme":  "iosapp",
                  "userInterfaceStyle":  "automatic",
                  "ios":  {
-                             "icon":  "./assets/expo.icon",
                              "bundleIdentifier":  "com.ddddai.accountapi",
                              "buildNumber":  "1"
                          },
