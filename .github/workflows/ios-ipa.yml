@@ -25,7 +25,7 @@ jobs:
 
       - name: Build unsigned .app (Release / iphoneos)
         run: |
-          set -e
+          set -eo pipefail
           SCHEME=$(ls ios | grep '\.xcodeproj$' | head -1 | sed 's/\.xcodeproj$//')
           echo "Scheme: $SCHEME"
           xcodebuild \
@@ -37,7 +37,15 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            build
+            build 2>&1 | tee xcodebuild.log | tail -n 300
+
+      - name: Upload build log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log
+          retention-days: 7
 
       - name: Package unsigned IPA
         run: |
